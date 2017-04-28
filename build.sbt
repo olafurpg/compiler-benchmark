@@ -33,18 +33,31 @@ lazy val infrastructure = addJmh(project).settings(
   )
 )
 
-lazy val compilation = addJmh(project).settings(
-  // We should be able to switch this project to a broad range of Scala versions for comparative
-  // benchmarking. As such, this project should only depend on the high level `MainClass` compiler API.
-  description := "Black box benchmark of the compiler",
-  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-).settings(addJavaOptions).dependsOn(infrastructure)
+val dottyVersion = settingKey[String]("Dotty version to be benchmarked.")
 
+dottyVersion in ThisBuild := dottyLatestNightlyBuild.get
+
+lazy val compilation = project
+  .enablePlugins(JmhPlugin)
+  .settings(
+    description := "Black box benchmark of the compilers",
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+    libraryDependencies += "ch.epfl.lamp" % "dotty-compiler_2.11" % dottyVersion.value,
+    libraryDependencies += "ch.epfl.lamp" % "dotty-library_2.11" % dottyVersion.value,
+    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % "2.11.5",
+    resolvers ++= (
+      if (dottyVersion.value.endsWith("-SNAPSHOT"))
+        List(
+          Resolver.mavenLocal,
+          Resolver.sonatypeRepo("snapshots")
+        )
+      else List(Resolver.mavenLocal))
+  ).settings(addJavaOptions).dependsOn(infrastructure)
 
 lazy val micro = addJmh(project).settings(
   description := "Finer grained benchmarks of compiler internals",
   libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-).settings(addJavaOptions).dependsOn(infrastructure)
+).settings(addJavaOptions)
 
 lazy val jvm = addJmh(project).settings(
   description := "Pure Java benchmarks for demonstrating performance anomalies independent from the Scala language/library",
