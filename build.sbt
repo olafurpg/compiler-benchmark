@@ -37,6 +37,8 @@ val dottyVersion = settingKey[String]("Dotty version to be benchmarked.")
 
 dottyVersion in ThisBuild := dottyLatestNightlyBuild.get
 
+// Compilation project
+// Needs to depend on both scalac and dotc and compile as a simple scala 2.11.8 maybe
 lazy val compilation = project
   .enablePlugins(JmhPlugin)
   .settings(
