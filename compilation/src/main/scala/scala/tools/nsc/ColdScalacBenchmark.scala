@@ -6,9 +6,6 @@ import base.BaseBenchmark
 import org.openjdk.jmh.annotations.Mode.SingleShotTime
 import org.openjdk.jmh.annotations._
 
-/**
-  * Created by bibou on 28/04/2017.
-  */
 @State(Scope.Benchmark)
 @BenchmarkMode(Array(SingleShotTime))
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
