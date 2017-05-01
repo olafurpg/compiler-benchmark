@@ -1,4 +1,4 @@
-package scala.tools.nsc
+package dotty.tools.dotc
 
 import java.util.concurrent.TimeUnit
 
@@ -14,7 +14,7 @@ import org.openjdk.jmh.annotations._
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 // TODO -Xbatch reduces fork-to-fork variance, but incurs 5s -> 30s slowdown
 @Fork(value = 16, jvmArgs = Array("-XX:CICompilerCount=2"))
-class ColdScalacBenchmark extends BaseBenchmark {
+class ColdDotcBenchmark extends BaseBenchmark {
   @Benchmark
-  override def compileScalac(): Unit = super.compileScalac()
+  override def compileDotc(): Unit = super.compileDotc()
 }

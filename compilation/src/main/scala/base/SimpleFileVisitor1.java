@@ -1,4 +1,4 @@
-package scala.tools.nsc;
+package base;
 
 import java.nio.file.SimpleFileVisitor;
 

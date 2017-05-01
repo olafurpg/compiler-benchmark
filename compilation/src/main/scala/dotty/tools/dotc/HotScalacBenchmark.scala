@@ -1,4 +1,4 @@
-package scala.tools.nsc
+package dotty.tools.dotc
 
 import java.util.concurrent.TimeUnit
 
@@ -14,7 +14,7 @@ import org.openjdk.jmh.annotations._
 @Warmup(iterations = 8, time = 10, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 10, time = 10, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
-class HotScalacBenchmark extends BaseBenchmark {
+class HotDotcBenchmark extends BaseBenchmark {
   @Benchmark
-  override def compileScalac(): Unit = super.compileScalac()
+  override def compileDotc(): Unit = super.compileDotc()
 }

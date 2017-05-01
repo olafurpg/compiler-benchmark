@@ -1,17 +1,34 @@
-package scala.tools.nsc
+package base
 
 import java.io.{File, IOException}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
+
+import org.openjdk.jmh.annotations._
+
+import scala.collection.JavaConverters._
+import scala.tools.nsc._
+import java.io._
+import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
+import java.util.stream.Collectors
+import dotty.tools.dotc.core.Contexts.ContextBase
 import scala.collection.JavaConverters._
 import org.openjdk.jmh.annotations._
-import org.openjdk.jmh.annotations.Mode._
+
+import SimpleFileVisitor1._
 
 @State(Scope.Benchmark)
-class BaseScalacBenchmark {
-  @Param(value = Array[String]())
+class BaseBenchmark {
+
+  @Param(value = Array[String](""))
+  var _classpath: String = _
+
+  @Param(value = Array[String](""))
+  var _dottyVersion: String = _
+
+  @Param(value = Array[String](""))
   var source: String = _
 
   @Param(value = Array(""))
@@ -19,7 +36,7 @@ class BaseScalacBenchmark {
 
   var driver: Driver = _
 
-  var compilerArgs = _
+  var compilerArgs: Array[String] = _
 
   // MainClass is copy-pasted from compiler for source compatibility with 2.10.x - 2.13.x
   class MainClass extends Driver with EvalLoop {
@@ -48,16 +65,35 @@ class BaseScalacBenchmark {
         val allFiles = Files.walk(findSourceDir).collect(Collectors.toList[Path]).asScala.toList
         allFiles.filter(_.getFileName.toString.endsWith(".scala")).map(_.toAbsolutePath.toString).toArray
       }
-
-    driver = new MainClass
   }
 
-  protected def compile(): Unit = {
+  protected def compileScalac(): Unit = {
     driver.process(compilerArgs)
     assert(!driver.reporter.hasErrors) // TODO: Remove
   }
 
-  private var tempDir: File = null
+  protected def compileDotc(): Unit = {
+    val cp = _classpath
+    val compilerArgs =
+      if (source.startsWith("@")) Array(source)
+      else {
+        val path = Collectors.toList[Path]()
+        val allFiles = Files.walk(findSourceDir).collect(path).asScala.toList
+        allFiles
+          .filter(_.getFileName.toString.endsWith(".scala"))
+          .map(_.toAbsolutePath.toString)
+          .toArray
+      }
+
+    implicit val ctx = (new ContextBase).initialCtx.fresh
+    ctx.setSetting(ctx.settings.classpath, cp)
+    ctx.setSetting(ctx.settings.usejavacp, true)
+    ctx.setSetting(ctx.settings.d, tempOutDir.getAbsolutePath)
+    if (source == "scalap")
+      ctx.setSetting(ctx.settings.language, List("Scala2"))
+    val reporter = dotty.tools.dotc.Bench.doCompile(new dotty.tools.dotc.Compiler, compilerArgs.toList)
+    assert(!reporter.hasErrors)
+  }
 
   @Setup(Level.Trial)
   def initTemp(): Unit = {
@@ -65,6 +101,8 @@ class BaseScalacBenchmark {
     tempFile.delete()
     tempFile.mkdir()
     tempDir = tempFile
+
+    driver = new MainClass
   }
 
   @TearDown(Level.Trial)
@@ -81,6 +119,16 @@ class BaseScalacBenchmark {
         FileVisitResult.CONTINUE
       }
     })
+  }
+
+
+  private var tempDir: File = null
+
+  private def tempOutDir: File = {
+    val tempFile = java.io.File.createTempFile("output", "")
+    tempFile.delete()
+    tempFile.mkdir()
+    tempFile
   }
 
   private def findSourceDir: Path = {
