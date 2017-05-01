@@ -45,7 +45,7 @@ lazy val compilation = project
     ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
     description := "Black box benchmark of the compilers",
     libraryDependencies +=  ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % "2.11.8",
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.8",
+//    libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.8",
     libraryDependencies += "ch.epfl.lamp" % "dotty-compiler_2.11" % dottyVersion.value,
     libraryDependencies += "ch.epfl.lamp" % "dotty-library_2.11" % dottyVersion.value
   )
