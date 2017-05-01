@@ -39,8 +39,6 @@ lazy val infrastructure = project
     )
 )
 
-// Compilation project
-// Needs to depend on both scalac and dotc and compile as a simple scala 2.11.5
 lazy val compilation = project
   .enablePlugins(JmhPlugin)
   .settings(
@@ -74,24 +72,23 @@ val ui = project.settings(
 )
 
 val runBatch = taskKey[Unit]("Run a batch of benchmark suites")
-val runBatchVersions = settingKey[Seq[String]]("Scala versions")
+val runBatchVersions = settingKey[Seq[String]]("Compiler versions")
 val runBatchBenches = settingKey[Seq[(sbt.Project, String)]]("Benchmarks")
 val runBatchSources = settingKey[Seq[String]]("Sources")
 
 runBatchVersions := List(
-  "0.1-20161216-ee5dd32-NIGHTLY",
-  "0.1-SNAPSHOT"
+  "0.1.1-bin-20170429-10a2ce6-NIGHTLY"
 )
 
 runBatchBenches := Seq(
-  (compilation, "ColdDottyBenchmark"),
-  (compilation, "HotDottyBenchmark")
+  (compilation, "HotDotcBenchmark")
 )
 
 runBatchSources := List(
-  //"scalap",
-  "better-files",
-  "squants"
+  // "scalap",
+  // "better-files",
+  // "squants"
+  "vector"
 )
 
 def setVersion(s: State, proj: sbt.Project, newVersion: String): State = {
@@ -115,6 +112,7 @@ commands += Command.args("runBatch", "") { (s: State, args: Seq[String]) =>
   val outFile = targetDir / "combined.csv"
 
   def filenameify(s: String) = s.replaceAll("""[@/:]""", "-")
+
   val tasks: Seq[State => State] = for {
     p <- runBatchSources.value.map(x => (filenameify(x), s"-p source=$x"))
     (sub, b) <- runBatchBenches.value

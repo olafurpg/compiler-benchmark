@@ -23,10 +23,10 @@ import SimpleFileVisitor1._
 class BaseBenchmark {
 
   @Param(value = Array[String](""))
-  var _classpath: String = _
+  var classPath: String = _
 
   @Param(value = Array[String](""))
-  var _dottyVersion: String = _
+  var dottyVersion: String = _
 
   @Param(value = Array[String](""))
   var source: String = _
@@ -56,34 +56,17 @@ class BaseBenchmark {
         settings.processArgumentString(extraArgs)
       true
     }
-
-    compilerArgs =
-      if (source.startsWith("@")) {
-        Array(source)
-      }
-      else {
-        val allFiles = Files.walk(findSourceDir).collect(Collectors.toList[Path]).asScala.toList
-        allFiles.filter(_.getFileName.toString.endsWith(".scala")).map(_.toAbsolutePath.toString).toArray
-      }
   }
 
   protected def compileScalac(): Unit = {
+    driver = new MainClass
+
     driver.process(compilerArgs)
     assert(!driver.reporter.hasErrors) // TODO: Remove
   }
 
   protected def compileDotc(): Unit = {
-    val cp = _classpath
-    val compilerArgs =
-      if (source.startsWith("@")) Array(source)
-      else {
-        val path = Collectors.toList[Path]()
-        val allFiles = Files.walk(findSourceDir).collect(path).asScala.toList
-        allFiles
-          .filter(_.getFileName.toString.endsWith(".scala"))
-          .map(_.toAbsolutePath.toString)
-          .toArray
-      }
+    val cp = classPath
 
     implicit val ctx = (new ContextBase).initialCtx.fresh
     ctx.setSetting(ctx.settings.classpath, cp)
@@ -91,18 +74,34 @@ class BaseBenchmark {
     ctx.setSetting(ctx.settings.d, tempOutDir.getAbsolutePath)
     if (source == "scalap")
       ctx.setSetting(ctx.settings.language, List("Scala2"))
+
     val reporter = dotty.tools.dotc.Bench.doCompile(new dotty.tools.dotc.Compiler, compilerArgs.toList)
     assert(!reporter.hasErrors)
   }
 
   @Setup(Level.Trial)
-  def initTemp(): Unit = {
+  def setup(): Unit = {
     val tempFile = java.io.File.createTempFile("output", "")
     tempFile.delete()
     tempFile.mkdir()
     tempDir = tempFile
 
-    driver = new MainClass
+    compilerArgs =
+      if (source.startsWith("@")) {
+        Array(source)
+      }
+      else {
+        val allFiles = Files
+          .walk(findSourceDir)
+          .collect(Collectors.toList[Path])
+          .asScala
+          .toList
+
+        allFiles
+          .filter(_.getFileName.toString.endsWith(".scala"))
+          .map(_.toAbsolutePath.toString)
+          .toArray
+      }
   }
 
   @TearDown(Level.Trial)
@@ -120,7 +119,6 @@ class BaseBenchmark {
       }
     })
   }
-
 
   private var tempDir: File = null
 
