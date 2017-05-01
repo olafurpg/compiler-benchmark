@@ -12,6 +12,6 @@ import org.openjdk.jmh.annotations._
 // TODO -Xbatch reduces fork-to-fork variance, but incurs 5s -> 30s slowdown
 @Fork(value = 16, jvmArgs = Array("-XX:CICompilerCount=2"))
 class ColdScalacBenchmark extends BaseBenchmark {
-//  @Benchmark
-//  override def compileScalac(): Unit = super.compileScalac()
+  @Benchmark
+  override def compileScalac(): Unit = super.compileScalac()
 }

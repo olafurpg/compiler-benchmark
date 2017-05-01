@@ -12,6 +12,6 @@ import org.openjdk.jmh.annotations._
 @Measurement(iterations = 1, time = 30, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
 class WarmScalacBenchmark extends BaseBenchmark {
-//  @Benchmark
-//  override def compileScalac(): Unit = super.compileScalac()
+  @Benchmark
+  override def compileScalac(): Unit = super.compileScalac()
 }
