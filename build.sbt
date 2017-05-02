@@ -6,8 +6,6 @@ scalaVersion in ThisBuild := "2.11.8"
 
 val dottyVersion = settingKey[String]("Dotty version to be benchmarked.")
 
-dottyVersion in ThisBuild := "0.1.1-bin-20170429-10a2ce6-NIGHTLY"
-
 // Convenient access to builds from PR validation
 resolvers ++= (
   if (scalaVersion.value.endsWith("-SNAPSHOT"))
@@ -39,16 +37,27 @@ lazy val infrastructure = project
     )
 )
 
-lazy val compilation = project
+lazy val `compilation-dotc` = project
+  .enablePlugins(JmhPlugin)
+  .settings(
+    dottyVersion := "0.1.1-bin-20170429-10a2ce6-NIGHTLY",
+    ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
+    description := "Black box benchmark of the compilers",
+    libraryDependencies +=  ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % "2.11.8",
+    libraryDependencies += "ch.epfl.lamp" % "dotty-compiler_2.11" % dottyVersion.value,
+    libraryDependencies += "ch.epfl.lamp" % "dotty-library_2.11" % dottyVersion.value
+  )
+  .dependsOn(infrastructure)
+
+lazy val `compilation-scalac` = project
   .enablePlugins(JmhPlugin)
   .settings(
     ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
     description := "Black box benchmark of the compilers",
     libraryDependencies +=  ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % "2.11.8",
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.8",
-    libraryDependencies += "ch.epfl.lamp" % "dotty-compiler_2.11" % dottyVersion.value,
-    libraryDependencies += "ch.epfl.lamp" % "dotty-library_2.11" % dottyVersion.value
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.8"
   )
+  .dependsOn(infrastructure)
 
 lazy val micro = project
   .enablePlugins(JmhPlugin)
@@ -77,11 +86,18 @@ val runBatchBenches = settingKey[Seq[(sbt.Project, String)]]("Benchmarks")
 val runBatchSources = settingKey[Seq[String]]("Sources")
 
 runBatchVersions := List(
-  "0.1.1-bin-20170429-10a2ce6-NIGHTLY"
+  "0.1.1-bin-20170429-10a2ce6-NIGHTLY",
+  "0.1.1-bin-20170428-206ba59-NIGHTLY",
+  "0.1.1-bin-20170427-fa13f8d-NIGHTLY",
+  "0.1.1-bin-20170426-8815b40-NIGHTLY",
+  "0.1.1-bin-20170425-f1c3529-NIGHTLY",
+  "0.1.1-bin-20170424-40d405b-NIGHTLY"
 )
 
 runBatchBenches := Seq(
-  (compilation, "HotDotcBenchmark")
+  (`compilation-dotc`, "HotDotcBenchmark"),
+  (`compilation-dotc`, "WarmDotcBenchmark"),
+  (`compilation-dotc`, "ColdDotcBenchmark")
 )
 
 runBatchSources := List(
@@ -133,19 +149,21 @@ commands += Command.args("runBatch", "") { (s: State, args: Seq[String]) =>
       val dottyArt = cpFiles.filter(_.getName.contains(dottyLibrary.name))
       val scalaArt = cpFiles.filter(_.getName.contains(scalaLibrary.name))
       val classpath = (dottyArt ++ scalaArt).mkString(":")
-      val cargs = s" -p _classpath=$classpath $argLine -p _dottyVersion=$v"
+      val cargs = s" -p classpath=$classpath $argLine -p dottyVersion=$v"
       val (s4, _) = extracted.runInputTask(run in sub in Jmh, cargs, s3)
       s4
     }
   }
+
   tasks.foldLeft(s)((state: State, fun: (State => State)) => {
     val newState = fun(state)
-    Project
-      .extract(newState)
-      .runInputTask(runMain in ui in Compile,
-        " compilerbenchmark.PlotData",
-        newState)
-      ._1
+//    Project
+//      .extract(newState)
+//      .runInputTask(runMain in ui in Compile,
+//        " compilerbenchmark.PlotData",
+//        newState)
+//      ._1
+    newState
   })
 }
 
@@ -153,6 +171,10 @@ addCommandAlias("hot", "compilation/jmh:run HotScalacBenchmark")
 
 addCommandAlias("cold", "compilation/jmh:run ColdScalacBenchmark")
 
-addCommandAlias("hot-dotc", "compilation/jmh:run HotDotcBenchmark")
+addCommandAlias("warm", "compilation/jmh:run WarmScalacBenchmark")
 
-addCommandAlias("cold-dotc", "compilation/jmh:run ColdDotcBenchmark")
+addCommandAlias("hot-dotc", "compilation-dotc/jmh:run HotDotcBenchmark")
+
+addCommandAlias("cold-dotc", "compilation-dotc/jmh:run ColdDotcBenchmark")
+
+addCommandAlias("warm-dotc", "compilation-dotc/jmh:run WarmDotcBenchmark")

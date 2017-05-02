@@ -1,4 +1,4 @@
-package base;
+package scala.bench;
 
 import java.nio.file.SimpleFileVisitor;
 
