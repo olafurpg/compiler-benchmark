@@ -13,11 +13,12 @@ import java.io._
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.stream.Collectors
-import dotty.tools.dotc.core.Contexts.ContextBase
+
 import scala.collection.JavaConverters._
 import org.openjdk.jmh.annotations._
 
-import SimpleFileVisitor1._
+import scala.bench.SimpleFileVisitor1
+import scala.bench.SimpleFileVisitor1._
 
 @State(Scope.Benchmark)
 class BaseBenchmark {
@@ -34,9 +35,9 @@ class BaseBenchmark {
   @Param(value = Array(""))
   var extraArgs: String = _
 
-  var driver: Driver = _
-
   var compilerArgs: Array[String] = _
+
+  var driver: Driver = _
 
   // MainClass is copy-pasted from compiler for source compatibility with 2.10.x - 2.13.x
   class MainClass extends Driver with EvalLoop {
@@ -63,20 +64,6 @@ class BaseBenchmark {
 
     driver.process(compilerArgs)
     assert(!driver.reporter.hasErrors) // TODO: Remove
-  }
-
-  protected def compileDotc(): Unit = {
-    val cp = classPath
-
-    implicit val ctx = (new ContextBase).initialCtx.fresh
-    ctx.setSetting(ctx.settings.classpath, cp)
-    ctx.setSetting(ctx.settings.usejavacp, true)
-    ctx.setSetting(ctx.settings.d, tempOutDir.getAbsolutePath)
-    if (source == "scalap")
-      ctx.setSetting(ctx.settings.language, List("Scala2"))
-
-    val reporter = dotty.tools.dotc.Bench.doCompile(new dotty.tools.dotc.Compiler, compilerArgs.toList)
-    assert(!reporter.hasErrors)
   }
 
   @Setup(Level.Trial)

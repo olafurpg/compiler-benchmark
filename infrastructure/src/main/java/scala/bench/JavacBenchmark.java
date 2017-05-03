@@ -1,4 +1,4 @@
-package base;
+package scala.bench;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
