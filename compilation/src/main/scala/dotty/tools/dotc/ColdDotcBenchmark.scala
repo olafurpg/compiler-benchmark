@@ -10,7 +10,7 @@ import org.openjdk.jmh.annotations._
 @BenchmarkMode(Array(SingleShotTime))
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 // TODO -Xbatch reduces fork-to-fork variance, but incurs 5s -> 30s slowdown
-@Fork(value = 1, jvmArgs = Array("-XX:CICompilerCount=2"))
+@Fork(value = 16, jvmArgs = Array("-XX:CICompilerCount=2"))
 class ColdDotcBenchmark extends BaseBenchmark {
   @Benchmark
   override def compileDotc(): Unit = super.compileDotc()
