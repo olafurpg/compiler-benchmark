@@ -43,11 +43,7 @@ lazy val infrastructure = project
 lazy val dotcRuntime = project
   .in(file("dotc-runtime"))
   .settings(
-    scalaVersion := {
-      val dottyVersion = dottyLatestNightlyBuild.get
-      sys.props("scalaRef") = dottyVersion
-      dottyVersion
-    },
+    scalaVersion := dottyVersion.value,
     libraryDependencies += "ch.epfl.lamp" % "dotty-compiler_0.1" % dottyVersion.value,
     libraryDependencies += "ch.epfl.lamp" % "dotty-library_0.1" % dottyVersion.value
   )
@@ -66,6 +62,7 @@ lazy val compilation = project
     description := "Black box benchmark of the compilers",
     fork in run := true,
     buildInfoKeys := Seq[BuildInfoKey](
+      dottyVersion,
       BuildInfoKey.map(fullClasspath.in(dotcRuntime, Compile)) {
         case (_, cp) =>
           val dottyClasspath = cp.map(_.data.getAbsolutePath)
@@ -107,7 +104,19 @@ val runBatchVersions = settingKey[Seq[String]]("Compiler versions")
 val runBatchBenches = settingKey[Seq[(sbt.Project, String)]]("Benchmarks")
 val runBatchSources = settingKey[Seq[String]]("Sources")
 
-runBatchVersions := List(dottyVersion.value)
+runBatchVersions :=
+  List(
+    "0.1.1-bin-20170501-b19d1fb-NIGHTLY",
+    "0.1.1-bin-20170501-de53e52-NIGHTLY",
+    "0.1.1-bin-20170502-df22149-NIGHTLY",
+    "0.1.1-bin-20170504-92fe2a5-NIGHTLY",
+    "0.1.1-bin-20170506-ea9643c-NIGHTLY",
+    "0.1.1-bin-20170506-385178d-NIGHTLY",
+    "0.1.1-bin-20170507-1014af3-NIGHTLY",
+    "0.1.1-bin-20170508-a391a58-NIGHTLY",
+    "0.1.1-bin-20170509-7a3f880-NIGHTLY",
+    "0.1.1-bin-20170510-85d9684-NIGHTLY"
+  )
 
 runBatchBenches := Seq(
   (compilation, "HotDotcBenchmark"),
@@ -137,37 +146,37 @@ def setVersion(s: State, proj: sbt.Project, newVersion: String): State = {
     BuiltinCommands.reapply(newSession, structure, s)
   }
 }
+lazy val ScalaRef = ".*-([^-]+)-NIGHTLY".r
 
-commands += Command.args("runBatch", "") { (s: State, args: Seq[String]) =>
-  val targetDir = target.value
-  def filenameify(s: String) = s.replaceAll("""[@/:]""", "-")
-  val tasks: Seq[State => State] = for {
-    p <- runBatchSources.value.map(x => (filenameify(x), s"-p source=$x"))
-    (sub, b) <- runBatchBenches.value
-    v <- runBatchVersions.value
-  } yield {
-    import ScalaArtifacts._
-    val scalaLibrary = Organization % LibraryID % "2.11.5"
-    val dottyLibrary = "ch.epfl.lamp" % "dotty-library_2.11" % v
-    val ioArgs = s"-rf csv -rff $targetDir/${p._1}-$b-$v.csv"
-    val argLine = s"$b ${p._2} $ioArgs"
+lazy val tasks = for {
+  version <- List(
+    "0.1.1-bin-20170501-b19d1fb-NIGHTLY",
+    "0.1.1-bin-20170501-de53e52-NIGHTLY",
+    "0.1.1-bin-20170502-df22149-NIGHTLY",
+    "0.1.1-bin-20170504-92fe2a5-NIGHTLY",
+    "0.1.1-bin-20170506-ea9643c-NIGHTLY",
+    "0.1.1-bin-20170506-385178d-NIGHTLY",
+    "0.1.1-bin-20170507-1014af3-NIGHTLY",
+    "0.1.1-bin-20170508-a391a58-NIGHTLY",
+    "0.1.1-bin-20170509-7a3f880-NIGHTLY",
+    "0.1.1-bin-20170510-85d9684-NIGHTLY"
+  )
+  setVersion = s"""set dottyVersion in ThisBuild := "$version"  """
+  ScalaRef(ref) = version
+  sysProps = s"-DscalaVersion=$version -DscalaRef=$ref"
+  runUpload = s"compilation/jmh:runMain $sysProps scala.bench.UploadingRunner "
+  inputProject <- List("vector")
+  source = s"-p source=$inputProject"
+  kind <- List("Cold", "Warm", "Hot")
+  bench = s"${kind}DotcBenchmark"
+} yield s"""; $setVersion ; $runUpload $bench $source """.stripMargin
 
-    (s1: State) =>
-      {
-        val s2 = setVersion(s1, sub, v)
-        val extracted = Project.extract(s2)
-        val (s3, cp) = extracted.runTask(fullClasspath in sub in Jmh, s2)
-        val cpFiles = cp.files
-        val dottyArt = cpFiles.filter(_.getName.contains(dottyLibrary.name))
-        val scalaArt = cpFiles.filter(_.getName.contains(scalaLibrary.name))
-        val classpath = (dottyArt ++ scalaArt).mkString(":")
-        val cargs = s" -p classpath=$classpath $argLine -p dottyVersion=$v"
-        val (s4, _) = extracted.runInputTask(run in sub in Jmh, cargs, s3)
-        s4
-      }
+commands += Command.command("runBatch") { s =>
+  tasks.foldLeft(s) {
+    case (state, task) =>
+      println(s"Running command: $task")
+      task :: state
   }
-
-  tasks.foldLeft(s) { case (a, b) => b(a) }
 }
 
 addCommandAlias("hot-scalac", "compilation/jmh:run HotScalacBenchmark")
@@ -182,12 +191,13 @@ addCommandAlias("cold-dotc", "compilation/jmh:run ColdDotcBenchmark")
 
 addCommandAlias("warm-dotc", "compilation/jmh:run WarmDotcBenchmark")
 
-def runBoth(cmd: String) = Command.args(cmd, cmd) { case (state, args) =>
-  s"$cmd-dotc " + args.mkString(" ") ::
+def runBoth(cmd: String) = Command.args(cmd, cmd) {
+  case (state, args) =>
+    s"$cmd-dotc " + args.mkString(" ") ::
       s"$cmd-scalac " + args.mkString(" ") ::
       state
 
-  }
+}
 
 commands += runBoth("cold")
 commands += runBoth("warm")

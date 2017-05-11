@@ -72,6 +72,7 @@ public class UploadingOutputFormat extends DelegatingOutputFormat {
             Collection<String> paramsKeys = params.getParamsKeys();
             pointBuilder.tag("label", result.getPrimaryResult().getLabel());
             String benchmarkName = result.getParams().getBenchmark()
+                    .replace(".compile", "")
                     .replace("scala.tools.nsc.", "")
                     .replace("dotty.tools.dotc.", "");
             pointBuilder.tag("benchmark", benchmarkName);
