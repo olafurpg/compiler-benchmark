@@ -32,7 +32,7 @@ public class Database {
 
         // workaround https://github.com/influxdata/influxdb-java/issues/268
         client.addNetworkInterceptor(chain -> {
-            HttpUrl.Builder fixedUrl = chain.request().url().newBuilder().encodedPath("/influx/" + chain.request().url().encodedPath().replaceFirst("/influxdb", ""));
+            HttpUrl.Builder fixedUrl = chain.request().url().newBuilder().encodedPath(chain.request().url().encodedPath().replaceFirst("/influxdb", ""));
             return chain.proceed(chain.request().newBuilder().url(fixedUrl.build()).build());
         });
 
