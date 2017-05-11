@@ -112,9 +112,9 @@ lazy val tasks = {
       ("Scalac", "scala", "2.11.8", "18f625db1c")
     )
     scalaVersion = s" -DscalaVersion=$version"
-    baseSourceDir = sys.props.getOrElse("gitrepos", "/home/benchs")
+    baseSourceDir = sys.props.getOrElse("gitrepos", "/home/benchs").stripSuffix("/")
     scalaRef = s" -DscalaRef=$ref"
-    localdir = s" -Dgit.localdir=$baseSourceDir$sourceDirectory"
+    localdir = s" -Dgit.localdir=$baseSourceDir/$sourceDirectory"
     sysProps = s"$scalaVersion $scalaRef $localdir"
     runUpload = s"compilation/jmh:runMain $sysProps scala.bench.UploadingRunner "
     inputProject <- List("vector", "squants")
