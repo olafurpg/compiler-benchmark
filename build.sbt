@@ -149,18 +149,7 @@ def setVersion(s: State, proj: sbt.Project, newVersion: String): State = {
 lazy val ScalaRef = ".*-([^-]+)-NIGHTLY".r
 
 lazy val tasks = for {
-  version <- List(
-    "0.1.1-bin-20170501-b19d1fb-NIGHTLY",
-    "0.1.1-bin-20170501-de53e52-NIGHTLY",
-    "0.1.1-bin-20170502-df22149-NIGHTLY",
-    "0.1.1-bin-20170504-92fe2a5-NIGHTLY",
-    "0.1.1-bin-20170506-ea9643c-NIGHTLY",
-    "0.1.1-bin-20170506-385178d-NIGHTLY",
-    "0.1.1-bin-20170507-1014af3-NIGHTLY",
-    "0.1.1-bin-20170508-a391a58-NIGHTLY",
-    "0.1.1-bin-20170509-7a3f880-NIGHTLY",
-    "0.1.1-bin-20170510-85d9684-NIGHTLY"
-  )
+  version <- List(dottyLatestNightlyBuild.get)
   setVersion = s"""set dottyVersion in ThisBuild := "$version"  """
   ScalaRef(ref) = version
   sysProps = s"-DscalaVersion=$version -DscalaRef=$ref"
@@ -169,7 +158,7 @@ lazy val tasks = for {
   source = s"-p source=$inputProject"
   kind <- List("Cold", "Warm", "Hot")
   bench = s"${kind}DotcBenchmark"
-} yield s"""; $setVersion ; $runUpload $bench $source """.stripMargin
+} yield s"""; clean ; $setVersion ; $runUpload $bench $source """.stripMargin
 
 commands += Command.command("runBatch") { s =>
   tasks.foldLeft(s) {
