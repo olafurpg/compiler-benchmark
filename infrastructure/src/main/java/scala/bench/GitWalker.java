@@ -29,7 +29,11 @@ public class GitWalker {
                 .retentionPolicy("autogen")
                 .consistency(InfluxDB.ConsistencyLevel.ALL)
                 .build();
-        createPoints("master", "ae4f1fa353", batchPoints, repo, branchesMap);
+        if (System.getProperty("git.localdir").contains("dotty")) {
+            createPoints("master", "ae4f1fa353", batchPoints, repo, branchesMap);
+        } else {
+            createPoints("2.11.x", "18f625db1c", batchPoints, repo, branchesMap);
+        }
         return new GitWalkerResult(batchPoints, branchesMap, repo);
     }
 

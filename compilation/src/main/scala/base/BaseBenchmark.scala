@@ -59,7 +59,7 @@ class BaseBenchmark(compilerJars: Seq[String]) {
 
   val compiler: Compiler = classloadCompiler(compilerJars)
 
-  protected def compile(): Unit =
+  def compile(): Unit =
     compiler.compile(compilerJars.toArray,
                      classPath,
                      tempDir.getAbsolutePath,

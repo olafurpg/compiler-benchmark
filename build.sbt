@@ -60,6 +60,7 @@ lazy val compilation = project
   .settings(
     ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
     description := "Black box benchmark of the compilers",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test,
     fork in run := true,
     buildInfoKeys := Seq[BuildInfoKey](
       dottyVersion,
@@ -99,66 +100,28 @@ val ui = project.settings(
   libraryDependencies += "com.h2database" % "h2" % "1.4.192"
 )
 
-val runBatch = taskKey[Unit]("Run a batch of benchmark suites")
-val runBatchVersions = settingKey[Seq[String]]("Compiler versions")
-val runBatchBenches = settingKey[Seq[(sbt.Project, String)]]("Benchmarks")
-val runBatchSources = settingKey[Seq[String]]("Sources")
+lazy val DottyRef = ".*-([^-]+)-NIGHTLY".r
 
-runBatchVersions :=
-  List(
-    "0.1.1-bin-20170501-b19d1fb-NIGHTLY",
-    "0.1.1-bin-20170501-de53e52-NIGHTLY",
-    "0.1.1-bin-20170502-df22149-NIGHTLY",
-    "0.1.1-bin-20170504-92fe2a5-NIGHTLY",
-    "0.1.1-bin-20170506-ea9643c-NIGHTLY",
-    "0.1.1-bin-20170506-385178d-NIGHTLY",
-    "0.1.1-bin-20170507-1014af3-NIGHTLY",
-    "0.1.1-bin-20170508-a391a58-NIGHTLY",
-    "0.1.1-bin-20170509-7a3f880-NIGHTLY",
-    "0.1.1-bin-20170510-85d9684-NIGHTLY"
-  )
-
-runBatchBenches := Seq(
-  (compilation, "HotDotcBenchmark"),
-  (compilation, "WarmDotcBenchmark"),
-  (compilation, "ColdDotcBenchmark")
-)
-
-runBatchSources := List(
-  // "scalap",
-  // "better-files",
-  // "squants"
-  "vector"
-)
-
-def setVersion(s: State, proj: sbt.Project, newVersion: String): State = {
-  val extracted = Project.extract(s)
-  import extracted._
-  if (get(dottyVersion in proj) == newVersion) s
-  else {
-    val append = Load.transformSettings(
-      Load.projectScope(currentRef),
-      currentRef.build,
-      rootProject,
-      (dottyVersion in proj := newVersion) :: Nil)
-    val newSession = session.appendSettings(append map (a => (a, Nil)))
-    s.log.info(s"Switching to Scala version $newVersion")
-    BuiltinCommands.reapply(newSession, structure, s)
-  }
+lazy val batchTasks = taskKey[List[String]]("")
+batchTasks := tasks
+lazy val tasks = {
+  val dottyLatestVersion @ DottyRef(dottyRef) = dottyLatestNightlyBuild.get
+  for {
+    (compiler, sourceDirectory, version, ref) <- List(
+      ("Dotc", "dotty", dottyLatestVersion, dottyRef),
+      ("Scalac", "scala", "2.11.8", "18f625db1c")
+    )
+    scalaVersion = s" -DscalaVersion=$version"
+    baseSourceDir = sys.props.getOrElse("gitrepos", "/home/benchs")
+    scalaRef = s" -DscalaRef=$ref"
+    localdir = s" -Dgit.localdir=$baseSourceDir$sourceDirectory"
+    sysProps = s"$scalaVersion $scalaRef $localdir"
+    runUpload = s"compilation/jmh:runMain $sysProps scala.bench.UploadingRunner "
+    inputProject <- List("vector", "squants")
+    source = s"-p source=$inputProject"
+    bench = s"(Cold|Warm|Hot)${compiler}Benchmark"
+  } yield s"""; clean ; $runUpload $bench $source """.stripMargin
 }
-lazy val ScalaRef = ".*-([^-]+)-NIGHTLY".r
-
-lazy val tasks = for {
-  version <- List(dottyLatestNightlyBuild.get)
-  setVersion = s"""set dottyVersion in ThisBuild := "$version"  """
-  ScalaRef(ref) = version
-  sysProps = s"-DscalaVersion=$version -DscalaRef=$ref"
-  runUpload = s"compilation/jmh:runMain $sysProps scala.bench.UploadingRunner "
-  inputProject <- List("vector")
-  source = s"-p source=$inputProject"
-  kind <- List("Cold", "Warm", "Hot")
-  bench = s"${kind}DotcBenchmark"
-} yield s"""; clean ; $setVersion ; $runUpload $bench $source """.stripMargin
 
 commands += Command.command("runBatch") { s =>
   tasks.foldLeft(s) {
@@ -169,25 +132,17 @@ commands += Command.command("runBatch") { s =>
 }
 
 addCommandAlias("hot-scalac", "compilation/jmh:run HotScalacBenchmark")
-
 addCommandAlias("cold-scalac", "compilation/jmh:run ColdScalacBenchmark")
-
 addCommandAlias("warm-scalac", "compilation/jmh:run WarmScalacBenchmark")
-
 addCommandAlias("hot-dotc", "compilation/jmh:run HotDotcBenchmark")
-
 addCommandAlias("cold-dotc", "compilation/jmh:run ColdDotcBenchmark")
-
 addCommandAlias("warm-dotc", "compilation/jmh:run WarmDotcBenchmark")
-
+commands += runBoth("cold")
+commands += runBoth("warm")
+commands += runBoth("hot")
 def runBoth(cmd: String) = Command.args(cmd, cmd) {
   case (state, args) =>
     s"$cmd-dotc " + args.mkString(" ") ::
       s"$cmd-scalac " + args.mkString(" ") ::
       state
-
 }
-
-commands += runBoth("cold")
-commands += runBoth("warm")
-commands += runBoth("hot")

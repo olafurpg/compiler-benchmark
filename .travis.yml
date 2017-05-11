@@ -1,5 +1,5 @@
 language: scala
 script:
-  - sbt "cold -p source=vector"
+  - sbt compilation/test
 jdk:
   - oraclejdk8
