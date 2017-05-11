@@ -60,6 +60,7 @@ lazy val compilation = project
   .settings(
     ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
     description := "Black box benchmark of the compilers",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test,
     fork in run := true,
     buildInfoKeys := Seq[BuildInfoKey](
       dottyVersion,
