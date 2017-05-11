@@ -3,6 +3,7 @@ package scala.tools.nsc
 import java.util.concurrent.TimeUnit
 
 import base.BaseBenchmark
+import base.BaseScalacBenchmark
 import org.openjdk.jmh.annotations.Mode.SampleTime
 import org.openjdk.jmh.annotations._
 
@@ -11,7 +12,7 @@ import org.openjdk.jmh.annotations._
 @Warmup(iterations = 0)
 @Measurement(iterations = 1, time = 30, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
-class WarmScalacBenchmark extends BaseBenchmark {
+class WarmScalacBenchmark extends BaseScalacBenchmark {
   @Benchmark
-  override def compileScalac(): Unit = super.compileScalac()
+  override def compile(): Unit = super.compile()
 }

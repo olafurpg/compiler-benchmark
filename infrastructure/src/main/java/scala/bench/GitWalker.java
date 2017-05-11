@@ -29,12 +29,7 @@ public class GitWalker {
                 .retentionPolicy("autogen")
                 .consistency(InfluxDB.ConsistencyLevel.ALL)
                 .build();
-        createPoints("2.13.x", "fc1aea6712", batchPoints, repo, branchesMap);
-        createPoints("2.12.x", "132a0587ab", batchPoints, repo, branchesMap);
-        createPoints("v2.12.0", "05016d9035", batchPoints, repo, branchesMap);
-        createPoints("2.11.x", "7ac15a1210", batchPoints, repo, branchesMap);
-        createPoints("2.10.x", "cc672b023e", batchPoints, repo, branchesMap);
-        createPoints("2.9.x", "33e1dac4e4", batchPoints, repo, branchesMap);
+        createPoints("master", "ae4f1fa353", batchPoints, repo, branchesMap);
         return new GitWalkerResult(batchPoints, branchesMap, repo);
     }
 
