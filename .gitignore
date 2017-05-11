@@ -2,3 +2,5 @@ target/
 *.jfr
 *.csv
 /.idea/
+
+compilation/*.json

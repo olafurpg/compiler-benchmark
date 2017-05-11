@@ -43,7 +43,11 @@ lazy val infrastructure = project
 lazy val dotcRuntime = project
   .in(file("dotc-runtime"))
   .settings(
-    scalaVersion := dottyLatestNightlyBuild.get,
+    scalaVersion := {
+      val dottyVersion = dottyLatestNightlyBuild.get
+      sys.props("scalaRef") = dottyVersion
+      dottyVersion
+    },
     libraryDependencies += "ch.epfl.lamp" % "dotty-compiler_0.1" % dottyVersion.value,
     libraryDependencies += "ch.epfl.lamp" % "dotty-library_0.1" % dottyVersion.value
   )
