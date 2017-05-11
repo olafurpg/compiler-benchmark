@@ -26,7 +26,7 @@ import java.net.URLClassLoader
 import buildinfo.BuildInfo
 
 @State(Scope.Benchmark)
-class BaseBenchmark {
+class BaseBenchmark(compilerJars: Seq[String]) {
 
   @Param(value = Array[String](""))
   var classPath: String = _
@@ -42,6 +42,13 @@ class BaseBenchmark {
 
   var compilerArgs: Array[String] = _
 
+  def classloadCompiler(cp: Seq[String]): Compiler = {
+    val classloader =
+      new URLClassLoader(cp.map(new File(_).toURI.toURL).toArray, null)
+    val cls = classloader.loadClass("compilerbenchmark.Benchmark")
+    cls.newInstance().asInstanceOf[Compiler]
+  }
+
   type Compiler = {
     def compile(compilerClasspath: Array[String],
                 classpath: String,
@@ -50,30 +57,14 @@ class BaseBenchmark {
                 files: Array[String]): Unit
   }
 
-  def classloadCompiler(cp: Seq[String]): Compiler = {
-    val classloader =
-      new URLClassLoader(cp.map(new File(_).toURI.toURL).toArray, null)
-    val cls = classloader.loadClass("compilerbenchmark.Benchmark")
-    cls.newInstance().asInstanceOf[Compiler]
-  }
+  val compiler: Compiler = classloadCompiler(compilerJars)
 
-  val scalacCompiler: Compiler =
-    classloadCompiler(BuildInfo.scalacClasspath)
-  val dotcCompiler: Compiler =
-    classloadCompiler(BuildInfo.dotcClasspath)
-
-  protected def compileScalac(): Unit =
-    scalacCompiler.compile(BuildInfo.scalacClasspath.toArray,
-                           classPath,
-                           tempDir.getAbsolutePath,
-                           extraArgs,
-                           compilerArgs)
-  protected def compileDotc(): Unit =
-    dotcCompiler.compile(BuildInfo.dotcClasspath.toArray,
-                         classPath,
-                         tempDir.getAbsolutePath,
-                         extraArgs,
-                         compilerArgs)
+  protected def compile(): Unit =
+    compiler.compile(compilerJars.toArray,
+                     classPath,
+                     tempDir.getAbsolutePath,
+                     extraArgs,
+                     compilerArgs)
 
   @Setup(Level.Trial)
   def setup(): Unit = {
@@ -134,3 +125,6 @@ class BaseBenchmark {
     else Paths.get(source)
   }
 }
+
+class BaseDotcBenchmark extends BaseBenchmark(BuildInfo.dotcClasspath)
+class BaseScalacBenchmark extends BaseBenchmark(BuildInfo.dotcClasspath)
