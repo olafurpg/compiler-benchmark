@@ -32,6 +32,8 @@ public class GitWalker {
         if (System.getProperty("git.localdir").contains("dotty")) {
             createPoints("master", "ae4f1fa353", batchPoints, repo, branchesMap);
         } else {
+            createPoints("2.13.x", "fc1aea6712", batchPoints, repo, branchesMap);
+            createPoints("2.12.x", "132a0587ab", batchPoints, repo, branchesMap);
             createPoints("2.11.x", "18f625db1c", batchPoints, repo, branchesMap);
         }
         return new GitWalkerResult(batchPoints, branchesMap, repo);

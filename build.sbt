@@ -1,3 +1,6 @@
+import java.io.BufferedInputStream
+import java.io.StringReader
+
 name := "compiler-benchmark"
 
 version := "1.0-SNAPSHOT"
@@ -20,6 +23,18 @@ resolvers ++= (
     )
   else
     Nil
+)
+
+lazy val latestScalacVersion = sys.props.getOrElse(
+  "scalacVersion", {
+    val view = scala.io.Source.fromURL(
+      "https://scala-ci.typesafe.com/job/scala-2.13.x-integrate-bootstrap/lastSuccessfulBuild/artifact/jenkins.properties/*view*/")
+    val props = new java.util.Properties()
+    props.load(new StringReader(view.mkString))
+    val version = props.getProperty("version")
+    println("Latest Scala nightly version: " + Some(version))
+    version
+  }
 )
 
 lazy val infrastructure = project
@@ -51,8 +66,9 @@ lazy val dotcRuntime = project
 lazy val scalacRuntime = project
   .in(file("scalac-runtime"))
   .settings(
-    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.CompilerID % "2.11.8",
-    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % "2.11.8"
+    resolvers += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/",
+    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.CompilerID % latestScalacVersion,
+    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % latestScalacVersion
   )
 
 lazy val compilation = project
@@ -115,7 +131,9 @@ lazy val tasks = {
       ("Scalac", "scala", "2.11.8", "18f625db1c")
     )
     scalaVersion = s" -DscalaVersion=$version"
-    baseSourceDir = sys.props.getOrElse("gitrepos", "/home/benchs").stripSuffix("/")
+    baseSourceDir = sys.props
+      .getOrElse("gitrepos", "/home/benchs")
+      .stripSuffix("/")
     benchmarkTimestamp = s" -DbenchmarkTimestamp=$timestamp"
     scalaRef = s" -DscalaRef=$ref"
     localdir = s" -Dgit.localdir=$baseSourceDir/$sourceDirectory"
