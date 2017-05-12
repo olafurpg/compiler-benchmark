@@ -1,3 +1,6 @@
+import java.io.BufferedInputStream
+import java.io.StringReader
+
 name := "compiler-benchmark"
 
 version := "1.0-SNAPSHOT"
@@ -20,6 +23,18 @@ resolvers ++= (
     )
   else
     Nil
+)
+
+lazy val latestScalacVersion = sys.props.getOrElse(
+  "scalacVersion", {
+    val view = scala.io.Source.fromURL(
+      "https://scala-ci.typesafe.com/job/scala-2.13.x-integrate-bootstrap/lastSuccessfulBuild/artifact/jenkins.properties/*view*/")
+    val props = new java.util.Properties()
+    props.load(new StringReader(view.mkString))
+    val version = props.getProperty("version")
+    println("Latest Scala nightly version: " + Some(version))
+    version
+  }
 )
 
 lazy val infrastructure = project
@@ -51,8 +66,9 @@ lazy val dotcRuntime = project
 lazy val scalacRuntime = project
   .in(file("scalac-runtime"))
   .settings(
-    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.CompilerID % "2.11.8",
-    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % "2.11.8"
+    resolvers += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/",
+    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.CompilerID % latestScalacVersion,
+    libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % latestScalacVersion
   )
 
 lazy val compilation = project
@@ -101,6 +117,9 @@ val ui = project.settings(
 )
 
 lazy val DottyRef = ".*-([^-]+)-NIGHTLY".r
+lazy val timestamp =
+  new java.text.SimpleDateFormat("yyyyMMdd_kkmmss")
+    .format(new java.util.Date())
 
 lazy val batchTasks = taskKey[List[String]]("")
 batchTasks := tasks
@@ -112,10 +131,13 @@ lazy val tasks = {
       ("Scalac", "scala", "2.11.8", "18f625db1c")
     )
     scalaVersion = s" -DscalaVersion=$version"
-    baseSourceDir = sys.props.getOrElse("gitrepos", "/home/benchs").stripSuffix("/")
+    baseSourceDir = sys.props
+      .getOrElse("gitrepos", "/home/benchs")
+      .stripSuffix("/")
+    benchmarkTimestamp = s" -DbenchmarkTimestamp=$timestamp"
     scalaRef = s" -DscalaRef=$ref"
     localdir = s" -Dgit.localdir=$baseSourceDir/$sourceDirectory"
-    sysProps = s"$scalaVersion $scalaRef $localdir"
+    sysProps = s"$scalaVersion $scalaRef $localdir $benchmarkTimestamp"
     runUpload = s"compilation/jmh:runMain $sysProps scala.bench.UploadingRunner "
     inputProject <- List("vector", "squants")
     source = s"-p source=$inputProject"
