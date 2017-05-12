@@ -101,6 +101,9 @@ val ui = project.settings(
 )
 
 lazy val DottyRef = ".*-([^-]+)-NIGHTLY".r
+lazy val timestamp =
+  new java.text.SimpleDateFormat("yyyyMMdd_kkmmss")
+    .format(new java.util.Date())
 
 lazy val batchTasks = taskKey[List[String]]("")
 batchTasks := tasks
@@ -113,9 +116,10 @@ lazy val tasks = {
     )
     scalaVersion = s" -DscalaVersion=$version"
     baseSourceDir = sys.props.getOrElse("gitrepos", "/home/benchs").stripSuffix("/")
+    benchmarkTimestamp = s" -DbenchmarkTimestamp=$timestamp"
     scalaRef = s" -DscalaRef=$ref"
     localdir = s" -Dgit.localdir=$baseSourceDir/$sourceDirectory"
-    sysProps = s"$scalaVersion $scalaRef $localdir"
+    sysProps = s"$scalaVersion $scalaRef $localdir $benchmarkTimestamp"
     runUpload = s"compilation/jmh:runMain $sysProps scala.bench.UploadingRunner "
     inputProject <- List("vector", "squants")
     source = s"-p source=$inputProject"
