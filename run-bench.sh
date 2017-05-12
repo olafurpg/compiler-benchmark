@@ -5,5 +5,5 @@ set -euox pipefail
 # commit messages.
 gitrepos=${1:-$HOME}
 cd $gitrepos/dotty && git checkout master && git pull origin master
-cd $gitrepos/scala && git checkout 2.13.x && git pull origin 2.13.x
+cd $gitrepos/scala && git checkout 2.12.x && git pull origin 2.12.x
 cd $gitrepos/compiler-benchmark && git pull origin dotty && sbt -Dgitrepos=$gitrepos runBatch
