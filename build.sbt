@@ -117,6 +117,7 @@ val ui = project.settings(
 )
 
 lazy val DottyRef = ".*-([^-]+)-NIGHTLY".r
+lazy val ScalaRef = ".*-([^-]+)".r
 lazy val timestamp =
   new java.text.SimpleDateFormat("yyyyMMdd_kkmmss")
     .format(new java.util.Date())
@@ -125,10 +126,11 @@ lazy val batchTasks = taskKey[List[String]]("")
 batchTasks := tasks
 lazy val tasks = {
   val dottyLatestVersion @ DottyRef(dottyRef) = dottyLatestNightlyBuild.get
+  val ScalaRef(scalaRef) = latestScalacVersion
   for {
     (compiler, sourceDirectory, version, ref) <- List(
       ("Dotc", "dotty", dottyLatestVersion, dottyRef),
-      ("Scalac", "scala", "2.11.8", "18f625db1c")
+      ("Scalac", "scala", latestScalacVersion, scalaRef)
     )
     scalaVersion = s" -DscalaVersion=$version"
     baseSourceDir = sys.props
