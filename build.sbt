@@ -28,7 +28,7 @@ resolvers ++= (
 lazy val latestScalacVersion = sys.props.getOrElse(
   "scalacVersion", {
     val view = scala.io.Source.fromURL(
-      "https://scala-ci.typesafe.com/job/scala-2.13.x-integrate-bootstrap/lastSuccessfulBuild/artifact/jenkins.properties/*view*/")
+      "https://scala-ci.typesafe.com/job/scala-2.12.x-integrate-bootstrap/lastSuccessfulBuild/artifact/jenkins.properties/*view*/")
     val props = new java.util.Properties()
     props.load(new StringReader(view.mkString))
     val version = props.getProperty("version")
