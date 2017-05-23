@@ -46,6 +46,7 @@ class BaseBenchmark(compilerJars: Seq[String]) {
     val classloader =
       new URLClassLoader(cp.map(new File(_).toURI.toURL).toArray, null)
     val cls = classloader.loadClass("compilerbenchmark.Benchmark")
+    cp.foreach(println)
     cls.newInstance().asInstanceOf[Compiler]
   }
 
@@ -127,4 +128,4 @@ class BaseBenchmark(compilerJars: Seq[String]) {
 }
 
 class BaseDotcBenchmark extends BaseBenchmark(BuildInfo.dotcClasspath)
-class BaseScalacBenchmark extends BaseBenchmark(BuildInfo.dotcClasspath)
+class BaseScalacBenchmark extends BaseBenchmark(BuildInfo.scalacClasspath)

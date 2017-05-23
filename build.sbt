@@ -10,7 +10,7 @@ val dottyVersion = settingKey[String]("Dotty version to be benchmarked.")
 dottyVersion in ThisBuild := sys.env.getOrElse("DOTTY_VERSION",
                                                DottyVersion.latestNightly.get)
 
-scalaVersion in ThisBuild := "2.11.8"
+scalaVersion in ThisBuild := latestScalacVersion
 
 // Convenient access to builds from PR validation
 resolvers ++= (
@@ -41,7 +41,6 @@ lazy val infrastructure = project
   .enablePlugins(JmhPlugin)
   .settings(
     description := "Infrastrucuture to persist benchmark results annotated with metadata from Git",
-    autoScalaLibrary := false,
     crossPaths := false,
     libraryDependencies ++= Seq(
       "org.influxdb" % "influxdb-java" % "2.5", // TODO update to 2.6 when released for fix for https://github.com/influxdata/influxdb-java/issues/269

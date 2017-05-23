@@ -17,7 +17,14 @@ class BenchmarkTest extends org.scalatest.FunSuite {
   }
 
   for {
-    bench <- List(new ColdDotcBenchmark, new ColdScalacBenchmark)
-    source <- List("vector", "squants", "paiges")
+    bench <- List(
+      new ColdDotcBenchmark,
+      new ColdScalacBenchmark
+    )
+    source <- List(
+      "vector",
+      "squants",
+      "paiges"
+    )
   } yield check(bench, source)
 }
