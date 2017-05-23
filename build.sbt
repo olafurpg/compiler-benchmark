@@ -78,6 +78,7 @@ lazy val scalacRuntime = project
 lazy val compilation = project
   .enablePlugins(JmhPlugin)
   .settings(
+    scalaVersion := "2.11.11",
     ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
     description := "Black box benchmark of the compilers",
     fork in run := true,
@@ -88,12 +89,14 @@ lazy val compilation = project
       BuildInfoKey.map(fullClasspath.in(dotcRuntime, Compile)) {
         case (_, cp) =>
           val dottyClasspath = cp.map(_.data.getAbsolutePath)
-          "dotcClasspath" -> dottyClasspath
+          "dotcClasspath" -> dottyClasspath.mkString(
+            java.io.File.pathSeparator)
       },
       BuildInfoKey.map(fullClasspath.in(scalacRuntime, Compile)) {
         case (_, cp) =>
           val scalacClasspath = cp.map(_.data.getAbsolutePath)
-          "scalacClasspath" -> scalacClasspath
+          "scalacClasspath" -> scalacClasspath.mkString(
+            java.io.File.pathSeparator)
       }
     )
   )
