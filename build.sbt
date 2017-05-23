@@ -141,7 +141,7 @@ lazy val tasks = {
     localdir = s" -Dgit.localdir=$baseSourceDir/$sourceDirectory"
     sysProps = s"$scalaVersion $scalaRef $localdir $benchmarkTimestamp"
     runUpload = s"compilation/jmh:runMain $sysProps scala.bench.UploadingRunner "
-    inputProject <- List("vector", "squants")
+    inputProject <- List("vector", "squants", "paiges")
     source = s"-p source=$inputProject"
     bench = s"(Cold|Warm|Hot)${compiler}Benchmark"
   } yield s"""; clean ; $runUpload $bench $source """.stripMargin
