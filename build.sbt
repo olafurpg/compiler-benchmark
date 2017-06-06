@@ -25,6 +25,10 @@ resolvers ++= (
     Nil
 )
 
+lazy val typesafeArtifactoryResolver = Seq(
+  resolvers += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/"
+)
+
 lazy val latestScalacVersion = sys.props.getOrElse(
   "scalacVersion", {
     val view = scala.io.Source.fromURL(
@@ -40,6 +44,7 @@ lazy val latestScalacVersion = sys.props.getOrElse(
 lazy val infrastructure = project
   .enablePlugins(JmhPlugin)
   .settings(
+    typesafeArtifactoryResolver,
     description := "Infrastrucuture to persist benchmark results annotated with metadata from Git",
     crossPaths := false,
     libraryDependencies ++= Seq(
@@ -65,7 +70,7 @@ lazy val dotcRuntime = project
 lazy val scalacRuntime = project
   .in(file("scalac-runtime"))
   .settings(
-    resolvers += "scala-integration" at "https://scala-ci.typesafe.com/artifactory/scala-integration/",
+    typesafeArtifactoryResolver,
     libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.CompilerID % latestScalacVersion,
     libraryDependencies += ScalaArtifacts.Organization % ScalaArtifacts.LibraryID % latestScalacVersion
   )
