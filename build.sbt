@@ -41,9 +41,14 @@ lazy val latestScalacVersion = sys.props.getOrElse(
   }
 )
 
+lazy val isDottyVersion = Seq(
+    scalaVersion := "0.1.1-bin-20170530-f8f52cc-NIGHTLY"
+)
+
 lazy val infrastructure = project
   .enablePlugins(JmhPlugin)
   .settings(
+    isDottyVersion,
     typesafeArtifactoryResolver,
     description := "Infrastrucuture to persist benchmark results annotated with metadata from Git",
     crossPaths := false,
@@ -78,7 +83,7 @@ lazy val scalacRuntime = project
 lazy val compilation = project
   .enablePlugins(JmhPlugin)
   .settings(
-    scalaVersion := "2.11.11",
+    isDottyVersion,
     ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) },
     description := "Black box benchmark of the compilers",
     fork in run := true,
